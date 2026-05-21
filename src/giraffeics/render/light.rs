@@ -11,22 +11,6 @@ pub struct Light<'a> {
 }
 
 impl<'a> Light<'a> {
-    pub fn new(
-        position: Vector3<f32>,
-        ambient: Vector3<f32>,
-        diffuse: Vector3<f32>,
-        specular: Vector3<f32>,
-        shader_program: &'a ShaderProgram,
-    ) -> Self {
-        Self {
-            position,
-            ambient,
-            diffuse,
-            specular,
-            shader_program,
-        }
-    }
-
     pub fn setup_shader(&self) {
         self.shader_program.use_program();
         self.shader_program.set_vec3("light.pos", self.position);

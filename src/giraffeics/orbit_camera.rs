@@ -66,6 +66,8 @@ impl OrbitCamera {
                 Keycode::S => self.orbit_down(delta),
                 Keycode::A => self.orbit_left(delta),
                 Keycode::D => self.orbit_right(delta),
+                Keycode::UP => self.move_closer(delta),
+                Keycode::DOWN => self.move_further(delta),
                 Keycode::EQUALS => self.zoom_in(delta),
                 Keycode::MINUS => self.zoom_out(delta),
                 _ => {}
@@ -114,6 +116,16 @@ impl OrbitCamera {
 
     fn zoom_out(&mut self, delta: f32) {
         self.zoom += self.zoom_speed * delta;
+    }
+
+    fn move_closer(&mut self, delta: f32) {
+        self.radius -= self.look_sensitivity * 0.01 * delta;
+        self.update_vectors();
+    }
+
+    fn move_further(&mut self, delta: f32) {
+        self.radius += self.look_sensitivity * 0.01 * delta;
+        self.update_vectors();
     }
 }
 

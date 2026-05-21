@@ -32,6 +32,7 @@ fn main() -> Result<(), String> {
     let mut ui = UI::init(&window);
 
     let mut keys = HashSet::new();
+    // let mut camera = Camera::default();
     let mut camera = OrbitCamera::default();
 
     let vao = VertexArrayObject::new()?;
@@ -113,6 +114,8 @@ fn main() -> Result<(), String> {
             .resizable(false)
             .max_width(120.)
             .show(&ui.ctx, |ui| {
+                ui.label("- use [wasd⬆⬇] to move the camera");
+                ui.label("- use [=-] to zoom");
                 ui.heading("Light");
                 ui::controls::custom_light(ui, &mut light);
                 ui.heading("Material");
