@@ -26,32 +26,25 @@ impl Vertex {
     }
 }
 
-pub struct Mesh<'a> {
-    pub vertices: Vec<Vertex>,
-    pub indices: Vec<u32>,
-    vao: &'a VertexArrayObject,
+pub struct Mesh {
+    index_count: usize,
+    vao: VertexArrayObject,
+    _vbo: BufferObject,
+    _ebo: BufferObject,
 }
 
-impl<'a> Mesh<'a> {
-    pub fn new(
-        vao: &'a VertexArrayObject,
-        vertices: Vec<Vertex>,
-        indices: Vec<u32>,
+impl Mesh {
+    pub fn from_vertices_indices(
+        vertices: &Vec<Vertex>,
+        indices: &Vec<u32>,
     ) -> Result<Self, String> {
-        let m = Self {
-            vao,
-            vertices,
-            indices,
-        };
-        m.setup()?;
-        Ok(m)
-    }
+        let vao = VertexArrayObject::new()?;
+        vao.bind();
 
-    fn setup(&self) -> Result<(), String> {
         let vbo = BufferObject::new()?;
         vbo.bind(BufferType::Array);
         vbo.buffer_data(
-            bytemuck::cast_slice(&self.vertices),
+            bytemuck::cast_slice(vertices),
             BufferType::Array,
             gl::STATIC_DRAW,
         );
@@ -59,7 +52,7 @@ impl<'a> Mesh<'a> {
         let ebo = BufferObject::new()?;
         ebo.bind(BufferType::ElementArray);
         ebo.buffer_data(
-            bytemuck::cast_slice(&self.indices),
+            bytemuck::cast_slice(indices),
             BufferType::ElementArray,
             gl::STATIC_DRAW,
         );
@@ -86,9 +79,12 @@ impl<'a> Mesh<'a> {
             gl::EnableVertexAttribArray(1);
         }
 
-        self.vao.bind();
-
-        Ok(())
+        Ok(Self {
+            index_count: indices.len(),
+            vao,
+            _vbo: vbo,
+            _ebo: ebo,
+        })
     }
 
     pub fn draw(&self) {
@@ -96,7 +92,7 @@ impl<'a> Mesh<'a> {
         unsafe {
             gl::DrawElements(
                 gl::TRIANGLES,
-                self.indices.len() as i32,
+                self.index_count as i32,
                 gl::UNSIGNED_INT,
                 0 as *const _,
             )

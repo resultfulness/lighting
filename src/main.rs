@@ -11,11 +11,9 @@ use crate::{
             light::Light,
             material::{Material, MaterialProperties},
             mesh::Mesh,
-            mesh_gen::{gen_sphere},
             object::Object,
         },
         shader::ShaderProgram,
-        vao::VertexArrayObject,
     },
     ui::UI,
 };
@@ -35,15 +33,11 @@ fn main() -> Result<(), String> {
     // let mut camera = Camera::default();
     let mut camera = OrbitCamera::default();
 
-    let vao = VertexArrayObject::new()?;
-    vao.bind();
-
     let shader_program =
         ShaderProgram::from_vert_frag(VERT_SHADER, FRAG_SHADER)?;
 
-    let (vertices, indices) = gen_sphere(1., 32, 32);
     let mut object = Object {
-        mesh: Mesh::new(&vao, vertices, indices)?,
+        mesh: Mesh::sphere(1., 32, 32)?,
         material: Material::new(MaterialProperties::EMERALD, &shader_program),
         transform: Matrix4::identity(),
     };
@@ -120,7 +114,7 @@ fn main() -> Result<(), String> {
                 ui.heading("Light");
                 ui::controls::custom_light(ui, &mut light);
                 ui.heading("Mesh");
-                ui::controls::meshes(ui, &mut object, &vao);
+                ui::controls::meshes(ui, &mut object);
                 ui.heading("Material");
                 ui::controls::presets(ui, &mut object);
                 ui::controls::custom_material(ui, &mut object);

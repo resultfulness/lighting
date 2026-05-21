@@ -1,14 +1,8 @@
 use egui::{Button, CollapsingHeader, Slider, Ui};
 
-use crate::giraffeics::{
-    render::{
-        light::Light,
-        material::ALL_MATERIALS_WITH_NAMES,
-        mesh::Mesh,
-        mesh_gen::{gen_cube, gen_plane, gen_sphere},
-        object::Object,
-    },
-    vao::VertexArrayObject,
+use crate::giraffeics::render::{
+    light::Light, material::ALL_MATERIALS_WITH_NAMES, mesh::Mesh,
+    object::Object,
 };
 
 pub fn presets(ui: &mut Ui, object: &mut Object) {
@@ -78,35 +72,28 @@ pub fn custom_light(ui: &mut Ui, light: &mut Light) {
     });
 }
 
-pub fn meshes<'a>(
-    ui: &mut Ui,
-    object: &mut Object<'a>,
-    vao: &'a VertexArrayObject,
-) {
+pub fn meshes(ui: &mut Ui, object: &mut Object) {
     CollapsingHeader::new("Mesh").show(ui, |ui| {
         egui::Grid::new("mesh-grid")
             .spacing([4., 4.])
             .show(ui, |ui| {
                 let fill = [ui.available_width(), ui.available_height()];
                 if ui.add_sized(fill, Button::new("sphere")).clicked() {
-                    let (vertices, indices) = gen_sphere(1., 32, 32);
-                    let mesh = Mesh::new(&vao, vertices, indices);
+                    let mesh = Mesh::sphere(1., 32, 32);
                     if let Ok(mesh) = mesh {
                         object.mesh = mesh;
                     }
                 }
                 ui.end_row();
                 if ui.add_sized(fill, Button::new("cube")).clicked() {
-                    let (vertices, indices) = gen_cube(1.);
-                    let mesh = Mesh::new(&vao, vertices, indices);
+                    let mesh = Mesh::cube(1.);
                     if let Ok(mesh) = mesh {
                         object.mesh = mesh;
                     }
                 }
                 ui.end_row();
                 if ui.add_sized(fill, Button::new("plane")).clicked() {
-                    let (vertices, indices) = gen_plane(1.);
-                    let mesh = Mesh::new(&vao, vertices, indices);
+                    let mesh = Mesh::plane(1.);
                     if let Ok(mesh) = mesh {
                         object.mesh = mesh;
                     }

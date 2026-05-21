@@ -3,7 +3,7 @@ use nalgebra::Matrix4;
 use crate::giraffeics::render::{material::Material, mesh::Mesh};
 
 pub struct Object<'a> {
-    pub mesh: Mesh<'a>,
+    pub mesh: Mesh,
     pub material: Material<'a>,
     pub transform: Matrix4<f32>,
 }

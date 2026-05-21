@@ -106,8 +106,8 @@ impl<'a> Material<'a> {
         shader_program: &'a ShaderProgram,
     ) -> Self {
         Self {
-            shader_program,
             properties,
+            shader_program,
         }
     }
 
