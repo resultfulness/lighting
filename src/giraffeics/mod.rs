@@ -1,5 +1,6 @@
 pub mod camera;
 pub mod buffer_object;
+pub mod orbit_camera;
 pub mod vao;
 pub mod shader;
 pub mod render;

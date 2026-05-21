@@ -1,11 +1,12 @@
 use std::{collections::HashSet, time::Instant};
 
 use nalgebra::{Matrix4, Perspective3, Vector3};
-use sdl2::{event::Event, keyboard::Keycode, sys::SDL_HapticLeftRight};
+use sdl2::{event::Event, keyboard::Keycode};
 
 use crate::{
     giraffeics::{
         camera::Camera,
+        orbit_camera::OrbitCamera,
         render::{
             light::Light,
             material::{Material, MaterialProperties},
@@ -31,7 +32,7 @@ fn main() -> Result<(), String> {
     let mut ui = UI::init(&window);
 
     let mut keys = HashSet::new();
-    let mut camera = Camera::default();
+    let mut camera = OrbitCamera::default();
 
     let vao = VertexArrayObject::new()?;
     vao.bind();
