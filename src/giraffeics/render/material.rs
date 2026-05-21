@@ -2,6 +2,7 @@ use nalgebra::Vector3;
 
 use crate::giraffeics::shader::ShaderProgram;
 
+#[derive(Copy, Clone)]
 pub struct MaterialProperties {
     pub ambient: Vector3<f32>,
     pub diffuse: Vector3<f32>,

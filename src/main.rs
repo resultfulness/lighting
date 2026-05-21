@@ -11,7 +11,7 @@ use crate::{
             light::Light,
             material::{Material, MaterialProperties},
             mesh::Mesh,
-            mesh_gen::gen_sphere,
+            mesh_gen::{gen_sphere},
             object::Object,
         },
         shader::ShaderProgram,
@@ -112,12 +112,15 @@ fn main() -> Result<(), String> {
 
         egui::Window::new("Controls")
             .resizable(false)
+            .vscroll(true)
             .max_width(120.)
             .show(&ui.ctx, |ui| {
                 ui.label("- use [wasd⬆⬇] to move the camera");
                 ui.label("- use [=-] to zoom");
                 ui.heading("Light");
                 ui::controls::custom_light(ui, &mut light);
+                ui.heading("Mesh");
+                ui::controls::meshes(ui, &mut object, &vao);
                 ui.heading("Material");
                 ui::controls::presets(ui, &mut object);
                 ui::controls::custom_material(ui, &mut object);
