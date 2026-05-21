@@ -12,11 +12,12 @@ use sdl2::{
 };
 
 use crate::giraffeics::{
-    bo::{BO, BufferType},
     camera::Camera,
-    mesh::{Mesh, Vertex},
+    render::{
+        material::Material, mesh::Mesh, mesh_gen::gen_sphere, object::Object,
+    },
     shader::ShaderProgram,
-    vao::VAO,
+    vao::VertexArrayObject,
 };
 
 mod giraffeics;
@@ -76,51 +77,25 @@ fn main() -> Result<(), String> {
     let mut keys = HashSet::new();
     let mut camera = Camera::default();
 
-    let sphere = Mesh::sphere(1., 32, 32);
-
-    let vao = VAO::new()?;
+    let vao = VertexArrayObject::new()?;
     vao.bind();
-
-    let vert_vbo = BO::new()?;
-    vert_vbo.bind(BufferType::Array);
-    vert_vbo.buffer_data(
-        bytemuck::cast_slice(&sphere.vertices),
-        BufferType::Array,
-        gl::STATIC_DRAW,
-    );
-
-    let ebo = BO::new()?;
-    ebo.bind(BufferType::ElementArray);
-    ebo.buffer_data(
-        bytemuck::cast_slice(&sphere.indices),
-        BufferType::ElementArray,
-        gl::STATIC_DRAW,
-    );
-
-    unsafe {
-        gl::VertexAttribPointer(
-            0,
-            3,
-            gl::FLOAT,
-            gl::FALSE,
-            size_of::<Vertex>().try_into().unwrap(),
-            0 as *const _,
-        );
-        gl::EnableVertexAttribArray(0);
-
-        gl::VertexAttribPointer(
-            1,
-            3,
-            gl::FLOAT,
-            gl::FALSE,
-            size_of::<Vertex>().try_into().unwrap(),
-            size_of::<[f32; 3]>() as *const _,
-        );
-        gl::EnableVertexAttribArray(1);
-    }
 
     let shader_program =
         ShaderProgram::from_vert_frag(VERT_SHADER, FRAG_SHADER)?;
+
+    let (vertices, indices) = gen_sphere(1., 32, 32);
+    let object = Object {
+        mesh: Mesh::new(&vao, vertices, indices)?,
+        material: Material {
+            shader_program: &shader_program,
+            ambient: Vector3::new(0.25, 0.25, 0.25),
+            diffuse: Vector3::new(0.4, 0.4, 0.4),
+            specular: Vector3::new(0.774597, 0.774597, 0.774597),
+            shininess: 32.0,
+        },
+        transform: Matrix4::identity(),
+    };
+
     shader_program.use_program();
 
     shader_program.set_vec3("light.pos", Vector3::new(2., 2., 2.));
@@ -128,22 +103,12 @@ fn main() -> Result<(), String> {
     shader_program.set_vec3("light.diffuse", Vector3::new(1., 1., 1.));
     shader_program.set_vec3("light.specular", Vector3::new(1., 1., 1.));
 
-    shader_program.set_vec3("material.ambient", Vector3::new(0.25, 0.25, 0.25));
-    shader_program.set_vec3("material.diffuse", Vector3::new(0.4, 0.4, 0.4));
-    shader_program.set_vec3(
-        "material.specular",
-        Vector3::new(0.774597, 0.774597, 0.774597),
-    );
-    shader_program.set_float("material.shininess", 0.6 * 128.);
-
-    let mut view;
     let mut proj = Perspective3::new(
         WINDOW_W as f32 / WINDOW_H as f32,
         camera.get_zoom().to_radians(),
         0.1,
         100.,
     );
-    let model = Matrix4::<f32>::identity();
 
     let mut start = Instant::now();
     let mut delta = 0.;
@@ -174,7 +139,6 @@ fn main() -> Result<(), String> {
         }
 
         camera.handle_keys(&keys, delta);
-        view = camera.get_view();
         proj.set_fovy(camera.get_zoom().to_radians());
 
         giraffeics::clear_color(0.2, 0.3, 0.3, 1.0);
@@ -184,20 +148,10 @@ fn main() -> Result<(), String> {
         shader_program.use_program();
 
         shader_program.set_vec3("view_pos", camera.get_position());
-        shader_program.set_mat4("view", view.as_ptr());
+        shader_program.set_mat4("view", camera.get_view().as_ptr());
         shader_program.set_mat4("projection", proj.as_matrix().as_ptr());
-        shader_program.set_mat4("model", model.as_ptr());
 
-        vao.bind();
-
-        unsafe {
-            gl::DrawElements(
-                gl::TRIANGLES,
-                sphere.indices.len() as i32,
-                gl::UNSIGNED_INT,
-                0 as *const _,
-            )
-        };
+        object.render();
 
         unsafe { gl::Disable(gl::DEPTH_TEST) };
 

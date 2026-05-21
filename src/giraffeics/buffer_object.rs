@@ -5,9 +5,9 @@ pub enum BufferType {
     ElementArray = gl::ELEMENT_ARRAY_BUFFER as isize,
 }
 
-pub struct BO(GLuint);
+pub struct BufferObject(GLuint);
 
-impl BO {
+impl BufferObject {
     pub fn new() -> Result<Self, String> {
         let mut bo = 0;
         unsafe { gl::GenBuffers(1, &mut bo) };

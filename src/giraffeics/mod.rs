@@ -1,8 +1,8 @@
-pub mod bo;
 pub mod camera;
-pub mod mesh;
-pub mod shader;
+pub mod buffer_object;
 pub mod vao;
+pub mod shader;
+pub mod render;
 
 pub fn clear_color(red: f32, green: f32, blue: f32, alpha: f32) {
     unsafe { gl::ClearColor(red, green, blue, alpha) }

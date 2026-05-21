@@ -1,8 +1,8 @@
 use gl::types::GLuint;
 
-pub struct VAO(GLuint);
+pub struct VertexArrayObject(GLuint);
 
-impl VAO {
+impl VertexArrayObject {
     pub fn new() -> Result<Self, String> {
         let mut vao = 0;
         unsafe { gl::GenVertexArrays(1, &mut vao) };
