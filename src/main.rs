@@ -1,8 +1,5 @@
 use std::{collections::HashSet, time::Instant};
 
-use egui_sdl2_gl::{
-    DpiScaling, EguiStateHandler, ShaderVersion, painter::Painter,
-};
 use nalgebra::{Matrix4, Perspective3, Vector3};
 use sdl2::{
     EventPump,
@@ -11,16 +8,21 @@ use sdl2::{
     video::{GLContext, SwapInterval, Window},
 };
 
-use crate::giraffeics::{
-    camera::Camera,
-    render::{
-        material::Material, mesh::Mesh, mesh_gen::gen_sphere, object::Object,
+use crate::{
+    giraffeics::{
+        camera::Camera,
+        render::{
+            material::Material, mesh::Mesh, mesh_gen::gen_sphere,
+            object::Object,
+        },
+        shader::ShaderProgram,
+        vao::VertexArrayObject,
     },
-    shader::ShaderProgram,
-    vao::VertexArrayObject,
+    ui::UI,
 };
 
 mod giraffeics;
+mod ui;
 
 const WINDOW_W: u32 = 800;
 const WINDOW_H: u32 = 600;
@@ -59,20 +61,9 @@ fn init_window() -> Result<(Window, EventPump, GLContext), String> {
     Ok((window, event_pump, _ctx))
 }
 
-fn init_egui(window: &Window) -> (Painter, EguiStateHandler, egui::Context) {
-    let (painter, egui_state) = egui_sdl2_gl::with_sdl2(
-        &window,
-        ShaderVersion::Default,
-        DpiScaling::Default,
-    );
-    let egui_ctx = egui::Context::default();
-
-    (painter, egui_state, egui_ctx)
-}
-
 fn main() -> Result<(), String> {
     let (window, mut event_pump, _ctx) = init_window()?;
-    let (mut painter, mut egui_state, egui_ctx) = init_egui(&window);
+    let mut ui = UI::init(&window);
 
     let mut keys = HashSet::new();
     let mut camera = Camera::default();
@@ -132,9 +123,7 @@ fn main() -> Result<(), String> {
                 } => {
                     keys.remove(&keycode);
                 }
-                _ => {
-                    egui_state.process_input(&window, event, &mut painter);
-                }
+                _ => ui.process_input(event),
             }
         }
 
@@ -155,15 +144,12 @@ fn main() -> Result<(), String> {
 
         unsafe { gl::Disable(gl::DEPTH_TEST) };
 
-        egui_ctx.begin_pass(egui_state.input.take());
+        ui.ctx.begin_pass(ui.egui_state.input.take());
 
-        egui::Window::new("Controls").show(&egui_ctx, |ui| {});
+        egui::Window::new("Controls").show(&ui.ctx, |ui| {});
 
-        let full_output = egui_ctx.end_pass();
-        egui_state.process_output(&window, &full_output.platform_output);
-        let paint_jobs = egui_ctx
-            .tessellate(full_output.shapes, full_output.pixels_per_point);
-        painter.paint_jobs(None, full_output.textures_delta, paint_jobs);
+        let full_output = ui.ctx.end_pass();
+        ui.handle_output(full_output);
 
         unsafe { gl::Enable(gl::DEPTH_TEST) };
 
