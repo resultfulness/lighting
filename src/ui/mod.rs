@@ -1,3 +1,5 @@
+pub mod controls;
+
 use egui::FullOutput;
 use egui_sdl2_gl::{
     DpiScaling, EguiStateHandler, ShaderVersion, painter::Painter,

@@ -1,18 +1,16 @@
 use std::{collections::HashSet, time::Instant};
 
 use nalgebra::{Matrix4, Perspective3, Vector3};
-use sdl2::{
-    EventPump,
-    event::Event,
-    keyboard::Keycode,
-    video::{GLContext, SwapInterval, Window},
-};
+use sdl2::{event::Event, keyboard::Keycode, sys::SDL_HapticLeftRight};
 
 use crate::{
     giraffeics::{
         camera::Camera,
         render::{
-            material::Material, mesh::Mesh, mesh_gen::gen_sphere,
+            light::Light,
+            material::{Material, MaterialProperties},
+            mesh::Mesh,
+            mesh_gen::gen_sphere,
             object::Object,
         },
         shader::ShaderProgram,
@@ -23,46 +21,13 @@ use crate::{
 
 mod giraffeics;
 mod ui;
-
-const WINDOW_W: u32 = 800;
-const WINDOW_H: u32 = 600;
+mod window;
 
 const VERT_SHADER: &str = include_str!("../res/shaders/transform_project.vert");
 const FRAG_SHADER: &str = include_str!("../res/shaders/light.frag");
 
-fn init_window() -> Result<(Window, EventPump, GLContext), String> {
-    let sdl_context = sdl2::init()?;
-    let video_subsystem = sdl_context.video()?;
-    let gl_attr = video_subsystem.gl_attr();
-
-    gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
-    gl_attr.set_context_version(3, 3);
-    gl_attr.set_multisample_samples(8);
-
-    let window = video_subsystem
-        .window("lighting", WINDOW_W, WINDOW_H)
-        .position_centered()
-        .opengl()
-        .build()
-        .unwrap();
-
-    let _ctx = window.gl_create_context()?;
-
-    let event_pump = sdl_context.event_pump()?;
-
-    window
-        .subsystem()
-        .gl_set_swap_interval(SwapInterval::VSync)?;
-
-    gl::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const _);
-
-    unsafe { gl::Enable(gl::DEPTH_TEST) };
-
-    Ok((window, event_pump, _ctx))
-}
-
 fn main() -> Result<(), String> {
-    let (window, mut event_pump, _ctx) = init_window()?;
+    let (window, mut event_pump, _ctx) = window::init_window()?;
     let mut ui = UI::init(&window);
 
     let mut keys = HashSet::new();
@@ -75,27 +40,22 @@ fn main() -> Result<(), String> {
         ShaderProgram::from_vert_frag(VERT_SHADER, FRAG_SHADER)?;
 
     let (vertices, indices) = gen_sphere(1., 32, 32);
-    let object = Object {
+    let mut object = Object {
         mesh: Mesh::new(&vao, vertices, indices)?,
-        material: Material {
-            shader_program: &shader_program,
-            ambient: Vector3::new(0.25, 0.25, 0.25),
-            diffuse: Vector3::new(0.4, 0.4, 0.4),
-            specular: Vector3::new(0.774597, 0.774597, 0.774597),
-            shininess: 32.0,
-        },
+        material: Material::new(MaterialProperties::EMERALD, &shader_program),
         transform: Matrix4::identity(),
     };
 
-    shader_program.use_program();
-
-    shader_program.set_vec3("light.pos", Vector3::new(2., 2., 2.));
-    shader_program.set_vec3("light.ambient", Vector3::new(1., 1., 1.));
-    shader_program.set_vec3("light.diffuse", Vector3::new(1., 1., 1.));
-    shader_program.set_vec3("light.specular", Vector3::new(1., 1., 1.));
+    let mut light = Light {
+        position: Vector3::new(2., 2., 2.),
+        ambient: Vector3::repeat(1.),
+        diffuse: Vector3::repeat(1.),
+        specular: Vector3::repeat(1.),
+        shader_program: &shader_program,
+    };
 
     let mut proj = Perspective3::new(
-        WINDOW_W as f32 / WINDOW_H as f32,
+        window::WIDTH as f32 / window::HEIGHT as f32,
         camera.get_zoom().to_radians(),
         0.1,
         100.,
@@ -140,13 +100,24 @@ fn main() -> Result<(), String> {
         shader_program.set_mat4("view", camera.get_view().as_ptr());
         shader_program.set_mat4("projection", proj.as_matrix().as_ptr());
 
+        light.setup_shader();
+
         object.render();
 
         unsafe { gl::Disable(gl::DEPTH_TEST) };
 
         ui.ctx.begin_pass(ui.egui_state.input.take());
 
-        egui::Window::new("Controls").show(&ui.ctx, |ui| {});
+        egui::Window::new("Controls")
+            .resizable(false)
+            .max_width(120.)
+            .show(&ui.ctx, |ui| {
+                ui.heading("Light");
+                ui::controls::custom_light(ui, &mut light);
+                ui.heading("Material");
+                ui::controls::presets(ui, &mut object);
+                ui::controls::custom_material(ui, &mut object);
+            });
 
         let full_output = ui.ctx.end_pass();
         ui.handle_output(full_output);

@@ -10,7 +10,7 @@ pub struct Object<'a> {
 
 impl Object<'_> {
     pub fn render(&self) {
-        self.material.bind();
+        self.material.setup_shader();
         self.material
             .shader_program
             .set_mat4("model", self.transform.as_ptr());
